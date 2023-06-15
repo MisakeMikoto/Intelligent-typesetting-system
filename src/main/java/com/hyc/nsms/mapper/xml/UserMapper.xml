@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hyc.nsms.mapper.UserMapper">
+    <resultMap id="userPageVo" type="com.hyc.nsms.model.vo.pageVo.UserPageVo">
+        <result column="id" property="id"/>
+        <result column="hospital_id" property="hospitalId"/>
+        <result column="hospital_name" property="hospitalName"/>
+        <result column="department_id" property="departmentId"/>
+        <result column="department_name" property="departmentName"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="name" property="name"/>
+        <result column="sex" property="sex"/>
+        <result column="phone" property="phone"/>
+        <result column="role_id" property="roleId"/>
+        <result column="role_name" property="roleName"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <resultMap id="informationPageVo" type="com.hyc.nsms.model.vo.pageVo.InformationPageVo">
+        <result column="id" property="id"/>
+        <result column="hospital_id" property="hospitalId"/>
+        <result column="hospital_name" property="hospitalName"/>
+        <result column="department_id" property="departmentId"/>
+        <result column="department_name" property="departmentName"/>
+        <result column="role_name" property="roleName"/>
+        <result column="username" property="username"/>
+        <result column="name" property="name"/>
+        <result column="sex" property="sex"/>
+        <result column="phone" property="phone"/>
+    </resultMap>
+
+    <!-- 通过传递当前页、每页记录数、用户权限等级、医院id、科室id、查询条件分页查询用户信息 -->
+    <select id="findPageUser" resultMap="userPageVo">
+        select
+        u.id,u.hospital_id,h.hospital_name,u.department_id,d.department_name,u.create_time,u.update_time,
+        u.username,u.password,u.name,u.sex,u.phone,u.role_id,r.role_name
+        from user u
+        left join role r on u.role_id = r.id
+        left join hospital h on u.hospital_id = h.id
+        left join department d on u.department_id = d.id
+        <where>
+            u.is_delete = 0
+            and r.level > #{level}
+            <if test="hospitalId != null and hospitalId != ''">
+                and u.hospital_id = #{hospitalId}
+            </if>
+            <if test="departmentId != null and departmentId != ''">
+                and u.department_id = #{departmentId}
+            </if>
+            <if test="departmentName != null and departmentName != ''">
+                and d.department_name = #{departmentName}
+            </if>
+            <if test="name != null and name != ''">
+                and u.name like "%" #{name} "%"
+            </if>
+        </where>
+    </select>
+
+    <!-- 通过用户id获得用户个人信息 -->
+    <select id="getInformationById" resultMap="informationPageVo">
+        select
+        u.id,u.hospital_id,h.hospital_name,u.department_id,d.department_name,
+        r.role_name,u.username,u.name,u.sex,u.phone,u.avatar_url
+        from user u
+        left join role r on u.role_id = r.id
+        left join hospital h on u.hospital_id = h.id
+        left join department d on u.department_id = d.id
+        <where>
+            u.is_delete = 0
+            and u.id = #{id}
+        </where>
+    </select>
+
+    <!-- 通过医院id或者科室id获得用户 -->
+    <select id="getUserByHospitalIdOrDepartmentId" resultMap="userPageVo">
+        select u.name,u.role_id,r.role_name,u.department_id,d.department_name
+        from user u
+        left join role r on u.role_id = r.id
+        left join department d on u.department_id = d.id
+        <where>
+            u.is_delete = 0
+            and r.level >= #{level}
+            <if test="hospitalId != null and hospitalId != ''">
+                and u.hospital_id = #{hospitalId}
+            </if>
+            <if test="departmentId != null and departmentId != ''">
+                and u.department_id = #{departmentId}
+            </if>
+        </where>
+    </select>
+</mapper>
+

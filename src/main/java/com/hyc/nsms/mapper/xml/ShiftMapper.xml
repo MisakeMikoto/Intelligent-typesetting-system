@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hyc.nsms.mapper.ShiftMapper">
+    <resultMap id="shiftPageVo" type="com.hyc.nsms.model.vo.pageVo.ShiftPageVo">
+        <result column="id" property="id"/>
+        <result column="hospital_id" property="hospitalId"/>
+        <result column="hospital_name" property="hospitalName"/>
+        <result column="department_id" property="departmentId"/>
+        <result column="department_name" property="departmentName"/>
+        <result column="shift_name" property="shiftName"/>
+        <result column="shift_sign" property="shiftSign"/>
+        <result column="start_time" property="startTime"/>
+        <result column="end_time" property="endTime"/>
+        <result column="duration" property="duration"/>
+        <result column="nurse_number" property="nurseNumber"/>
+        <result column="carer_number" property="carerNumber"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 通过传递当前页、每页记录数、医院id、科室id、查询条件分页查询班次信息 -->
+    <select id="findPageShift" resultMap="shiftPageVo">
+        select
+        s.id,h.id as hospital_id,h.hospital_name,s.department_id,d.department_name,s.create_time,s.update_time,
+        s.shift_name,s.shift_sign,s.start_time,s.end_time,s.duration,s.nurse_number,s.carer_number
+        from shift s
+        left join department d on s.department_id = d.id
+        left join hospital h on h.id = d.hospital_id
+        <where>
+            s.is_delete = 0
+            <if test="hospitalId != null and hospitalId != ''">
+                and h.id = #{hospitalId}
+            </if>
+            <if test="departmentId != null and departmentId != ''">
+                and s.department_id = #{departmentId}
+            </if>
+            <if test="shiftName != null and shiftName != ''">
+                and s.shift_name = #{shiftName}
+            </if>
+            <if test="departmentName != null and departmentName != ''">
+                and d.department_name = #{departmentName}
+            </if>
+        </where>
+    </select>
+</mapper>

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hyc.nsms.mapper.ScheduleMapper">
+    <resultMap id="scheduleVo" type="com.hyc.nsms.model.vo.ScheduleVo">
+        <result column="user_id" property="userId"/>
+        <result column="shift_id" property="shiftId"/>
+        <result column="shift_name" property="shiftName"/>
+        <result column="schedule_date" property="scheduleDate"/>
+        <result column="name" property="name"/>
+        <result column="department_id" property="departmentId"/>
+    </resultMap>
+
+    <resultMap id="schedulePageVo" type="com.hyc.nsms.model.vo.pageVo.SchedulePageVo">
+        <result column="hospital_id" property="hospitalId"/>
+        <result column="hospital_name" property="hospitalName"/>
+        <result column="department_id" property="departmentId"/>
+        <result column="department_name" property="departmentName"/>
+        <result column="user_id" property="userId"/>
+        <result column="name" property="name"/>
+        <result column="shift_id" property="shiftId"/>
+        <result column="shift_name" property="shiftName"/>
+        <result column="schedule_date" property="scheduleDate"/>
+        <result column="department_name" property="departmentName"/>
+    </resultMap>
+
+    <!-- 通过传递当前页、每页记录数、医院id、科室id、查询条件分页查询排班信息 -->
+    <select id="findPageSchedule" resultMap="schedulePageVo">
+        select
+        u.hospital_id,h.hospital_name,u.department_id,d.department_name,
+        s.*,sh.shift_name,u.name,u.username
+        from schedule s
+        left join user u on u.id = s.user_id
+        left join hospital h on h.id = u.hospital_id
+        left join department d on d.id = u.department_id
+        left join shift sh on sh.id = s.shift_id
+        <where>
+            <if test="hospitalId != null and hospitalId != ''">
+                u.hospital_id = #{hospitalId}
+            </if>
+            <if test="departmentId != null and departmentId != ''">
+                and u.department_id = #{departmentId}
+            </if>
+            <if test="name != null and name != ''">
+                and u.name like "%" #{name} "%"
+            </if>
+            <if test="shiftName != null and shiftName != ''">
+                and sh.shift_name = #{shiftName}
+            </if>
+            <if test="departmentName != null and departmentName != ''">
+                and d.department_name = #{departmentName}
+            </if>
+        </where>
+    </select>
+
+    <!-- 通过用户id和日期获得排班信息 -->
+    <select id="getScheduleByUserIdAndDate" resultMap="scheduleVo">
+        select u.name,s.*,sh.shift_name,sh.shift_sign
+        from schedule s
+        left join user u on s.user_id = u.id
+        left join shift sh on sh.id = s.shift_id
+        <where>
+            sh.is_delete = 0
+            <if test="userId != null and userId != ''">
+                u.id = #{userId}
+            </if>
+            <if test="startDate != null and endDate != null">
+                and s.schedule_date between #{startDate} and #{endDate}
+            </if>
+        </where>
+        order by u.name,s.schedule_date
+    </select>
+
+    <!-- 通过科室id和日期获得排班信息 -->
+    <select id="getScheduleByDepartmentIdAndDate" resultMap="scheduleVo">
+        select u.name,r.role_name,s.*,sh.shift_name,sh.shift_sign
+        from schedule s
+        left join user u on s.user_id = u.id
+        left join role r on r.id = u.role_id
+        left join shift sh on sh.id = s.shift_id
+        <where>
+            sh.is_delete = 0
+            <if test="departmentId != null and departmentId != ''">
+                and u.department_id = #{departmentId}
+            </if>
+            <if test="startDate != null and endDate != null">
+                and s.schedule_date between #{startDate} and #{endDate}
+            </if>
+        </where>
+        order by u.role_id,u.name,s.schedule_date
+    </select>
+
+    <!-- 获得员工id集合 -->
+    <select id="getWorkUserIdList" resultType="Integer">
+        select s.user_id
+        from schedule s
+        left join shift sh on sh.id = s.shift_id
+        left join user u on s.user_id = u.id
+        <where>
+            s.schedule_date = #{today}
+            or s.schedule_date = #{yesterday}
+            and sh.shift_sign = 3 and s.leave_status = 0
+            <if test="tomorrow != null">
+                or s.schedule_date = #{tomorrow}
+            </if>
+            <if test="departmentId != null and departmentId != ''">
+                and u.department_id = #{departmentId}
+            </if>
+        </where>
+        group by s.user_id
+        order by u.role_id,u.name,s.schedule_date
+    </select>
+
+    <!-- 获得排班所有员工姓名 -->
+    <select id="getStaffByDepartmentIdAndDate" resultMap="scheduleVo">
+        select u.name from schedule s
+        left join user u on u.id = s.user_id
+        <where>
+            <if test="departmentId != null and departmentId != ''">
+                u.department_id = #{departmentId}
+            </if>
+            <if test="startDate != null and endDate != null">
+                and s.schedule_date BETWEEN #{startDate} and #{endDate}
+            </if>
+        </where>
+        group by s.user_id
+    </select>
+
+    <!-- 获得排班员工数量集合 -->
+    <select id="getStaffCount" resultMap="scheduleVo">
+        select count(*) from schedule s
+        left join user u on u.id = s.user_id
+        left join department d on d.id = u.department_id
+        <where>
+            <if test="departmentId != null and departmentId != ''">
+                u.department_id = #{departmentId}
+            </if>
+            <if test="firstDate != null and lastDate != null">
+                and s.schedule_date between #{firstDate} and #{lastDate}
+            </if>
+        </where>
+        group by s.user_id
+        order by u.role_id,u.name,s.schedule_date
+    </select>
+
+    <!-- 通过科室id从数据库删除区间数据 -->
+    <delete id="deleteByScheduleDate">
+        DELETE s from `schedule` s
+        LEFT JOIN shift sh on sh.id = s.shift_id
+        LEFT JOIN department d on d.id = sh.department_id
+        <where>
+            sh.department_id = #{departmentId}
+            <if test="firstDate != null and lastDate != null">
+                and s.schedule_date between #{firstDate} and #{lastDate}
+            </if>
+        </where>
+    </delete>
+</mapper>

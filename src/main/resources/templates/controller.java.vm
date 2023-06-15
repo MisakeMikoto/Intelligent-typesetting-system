@@ -1,0 +1,117 @@
+package ${package.Controller};
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.hyc.nsms.model.result.Result;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.*;
+
+import $!{package.Service}.$!{table.serviceName};
+import ${package.Entity}.${entity};
+
+
+#if(${restControllerStyle})
+import org.springframework.web.bind.annotation.RestController;
+#else
+import org.springframework.stereotype.Controller;
+#end
+#if(${superControllerClassPackage})
+import ${superControllerClassPackage};
+#end
+
+#if(${restControllerStyle})
+@RestController
+#else
+@Controller
+#end
+@RequestMapping("#if(${package.ModuleName})/${package.ModuleName}#end/#if(${controllerMappingHyphenStyle})${controllerMappingHyphen}#else${table.entityPath}#end")
+#if(${kotlin})
+class ${table.controllerName}#if(${superControllerClass}) : ${superControllerClass}()#end
+
+#else
+#if(${superControllerClass})
+public class ${table.controllerName} extends ${superControllerClass} {
+#else
+public class ${table.controllerName} {
+#end
+    @Autowired
+    private ${table.serviceName} ${table.entityPath}Service;
+
+    //查询${entity}表所有信息
+    @GetMapping("findAll${entity}")
+    public Result findAll${entity}() {
+        List<${entity}> list = ${table.entityPath}Service.list();
+        return Result.ok(list);
+     }
+
+    //根据id获取${entity}
+    @GetMapping("get${entity}ById/{id}")
+    public Result get${entity}ById(@PathVariable Integer id) {
+        ${entity} ${table.entityPath} = ${table.entityPath}Service.getById(id);
+        return Result.ok(${table.entityPath});
+    }
+
+    //条件查询带分页
+    @PostMapping("findPage${entity}/{current}/{limit}")
+    public Result findPage${entity}(@PathVariable Integer current, @PathVariable Integer limit, @RequestBody(required = false) ${entity} ${table.entityPath}) {
+        //创建page对象，传递当前页，每页记录数
+        Page<${entity}> page = new Page<>(current, limit);
+        //构建条件
+        QueryWrapper<${entity}> wrapper = new QueryWrapper<>();
+
+        String ${table.entityPath}Name = ${table.entityPath}.get${entity}Name();//${entity}名称
+
+        if (!StringUtils.isEmpty(${table.entityPath}Name)) {
+            wrapper.like("${table.entityPath}_name", ${table.entityPath}Name);
+        }
+
+        //调用方法实现分页查询
+        Page<${entity}> ${entity}Page = ${table.entityPath}Service.page(page, wrapper);
+        //返回结果
+        return Result.ok(${entity}Page);
+     }
+
+    //添加${entity}
+    @PostMapping("save${entity}")
+    public Result save${entity}(@RequestBody ${entity} ${table.entityPath}) {
+        boolean save = ${table.entityPath}Service.save(${table.entityPath});
+        if (save) {
+            return Result.ok();
+        } else {
+            return Result.fail();
+        }
+    }
+
+    //修改${entity}信息
+    @PostMapping("update${entity}")
+    public Result update${entity}(@RequestBody ${entity} ${table.entityPath}) {
+        boolean flag = ${table.entityPath}Service.updateById(${table.entityPath});
+        if (flag) {
+            return Result.ok();
+        } else {
+            return Result.fail();
+        }
+    }
+
+    //删除${entity}
+    @DeleteMapping("{id}")
+    public Result remove${entity}(@PathVariable Integer id) {
+        boolean flag = ${table.entityPath}Service.removeById(id);
+        if (flag) {
+            return Result.ok();
+        } else {
+            return Result.fail();
+        }
+    }
+
+    //批量删除${entity}
+    @DeleteMapping("batchRemove")
+    public Result batchRemoveHospitalSet(@RequestBody List<Integer> idList) {
+        ${table.entityPath}Service.removeByIds(idList);
+        return Result.ok();
+    }
+}
+
+#end

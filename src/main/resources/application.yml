@@ -1,0 +1,33 @@
+server:
+  port: 8800
+#  ip: cau1i.cn
+  ip: localhost
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://cau1i.cn:3306/nsdb?serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+    url: jdbc:mysql://localhost:3306/nsdb?serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+    username: root
+    password: '011023'
+  redis:
+    host: 47.112.102.45
+    port: 6379
+    database: 0
+    timeout: 1800000
+    password: '011023'
+  servlet:
+    multipart:
+      # 最大上传文件限制
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+mybatis-plus:
+  # mapper扫描
+  mapper-locations: classpath:com/hyc/nsms/mapper/xml/*.xml
+  configuration:
+    # 打印sql
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+files:
+  upload:
+    path: ./src/main/resources/static/

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hyc.nsms.mapper.ExpectationMapper">
+    <resultMap id="expectationPageVo" type="com.hyc.nsms.model.vo.pageVo.ExpectationPageVo">
+        <result column="id" property="id"/>
+        <result column="hospital_id" property="hospitalId"/>
+        <result column="hospital_name" property="hospitalName"/>
+        <result column="department_id" property="departmentId"/>
+        <result column="department_name" property="departmentName"/>
+        <result column="username" property="username"/>
+        <result column="name" property="name"/>
+        <result column="start_date" property="startDate"/>
+        <result column="end_date" property="endDate"/>
+        <result column="shift_sign" property="shiftSign"/>
+        <result column="reason" property="reason"/>
+        <result column="status" property="status"/>
+        <result column="complete" property="complete"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 通过传递当前页、每页记录数、用户权限等级、医院id、科室id、查询条件分页查询期望信息 -->
+    <select id="findPageExpectation" resultMap="expectationPageVo">
+        select
+        e.id,u.hospital_id,h.hospital_name,u.department_id,d.department_name,e.create_time,e.update_time,
+        e.user_id,u.name,u.username,e.start_date,e.end_date,e.shift_sign,e.expected_days,e.reason,e.status,e.complete
+        from expectation e
+        left join user u on u.id = e.user_id
+        left join role r on r.id = u.role_id
+        left join hospital h on h.id = u.hospital_id
+        left join department d on d.id = u.department_id
+        <where>
+            e.is_delete = 0
+            and r.level > #{level}
+            <if test="hospitalId != null and hospitalId != ''">
+                and u.hospital_id = #{hospitalId}
+            </if>
+            <if test="departmentId != null and departmentId != ''">
+                and u.department_id = #{departmentId}
+            </if>
+            <if test="name != null and name != ''">
+                and u.name like "%" #{name} "%"
+            </if>
+        </where>
+    </select>
+</mapper>

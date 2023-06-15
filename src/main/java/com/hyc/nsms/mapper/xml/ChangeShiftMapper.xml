@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hyc.nsms.mapper.ChangeShiftMapper">
+    <resultMap id="changeShiftPageVo" type="com.hyc.nsms.model.vo.pageVo.ChangeShiftPageVo">
+        <result column="id" property="id"/>
+        <result column="hospital_id" property="hospitalId"/>
+        <result column="hospital_name" property="hospitalName"/>
+        <result column="department_id" property="departmentId"/>
+        <result column="department_name" property="departmentName"/>
+        <result column="user_id" property="userId"/>
+        <result column="username" property="username"/>
+        <result column="name" property="name"/>
+        <result column="shift_id" property="shiftId"/>
+        <result column="shift_name" property="shiftName"/>
+        <result column="schedule_date" property="scheduleDate"/>
+        <result column="changed_username" property="changedUsername"/>
+        <result column="changed_user_id" property="changedUserId"/>
+        <result column="changed_name" property="changedName"/>
+        <result column="changed_shift_id" property="changedShiftId"/>
+        <result column="changed_shift_name" property="changedShiftName"/>
+        <result column="changed_schedule_date" property="changedScheduleDate"/>
+        <result column="reason" property="reason"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 通过传递当前页、每页记录数、用户权限等级、医院id、科室id、查询条件分页查询换班信息 -->
+    <select id="findPageChangeShift" resultMap="changeShiftPageVo">
+        select
+        cs.id,u1.hospital_id,h.hospital_name,u1.department_id,d.department_name,cs.create_time,cs.update_time,
+        cs.shift_id,s1.shift_name,cs.schedule_date,cs.user_id,u1.name,u1.username,
+        cs.changed_schedule_date,s2.shift_name as changed_shift_name,cs.changed_shift_id,u2.id as
+        changed_user_id,u2.name as changed_name,u2.username as changed_username,
+        cs.reason,cs.status
+        from change_shift cs
+        left join user u1 on u1.id = cs.user_id
+        left join user u2 on u2.id = cs.changed_user_id
+        left join shift s1 on s1.id = cs.shift_id
+        left join shift s2 on s2.id = cs.changed_shift_id
+        left join role r on r.id = u1.role_id
+        left join hospital h on h.id = u1.hospital_id
+        left join department d on d.id = u1.department_id
+        <where>
+            cs.is_delete = 0
+            and r.level > #{level}
+            <if test="hospitalId != null and hospitalId != ''">
+                and u1.hospital_id = #{hospitalId}
+            </if>
+            <if test="departmentId != null and departmentId != ''">
+                and u1.department_id = #{departmentId}
+            </if>
+            <if test="name != null and name != ''">
+                and u1.name like "%" #{name} "%"
+            </if>
+            <if test="changedName != null and changedName != ''">
+                and u2.name like "%" #{changedName} "%"
+            </if>
+        </where>
+    </select>
+</mapper>

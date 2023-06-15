@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hyc.nsms.mapper.DepartmentMapper">
+    <resultMap id="departmentPageVo" type="com.hyc.nsms.model.vo.pageVo.DepartmentPageVo">
+        <result column="id" property="id"/>
+        <result column="hospital_id" property="hospitalId"/>
+        <result column="hospital_name" property="hospitalName"/>
+        <result column="department_name" property="departmentName"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 通过传递当前页、每页记录数、医院id、科室id、查询条件分页查询科室信息 -->
+    <select id="findPageDepartment" resultMap="departmentPageVo">
+        select
+        d.id,d.department_name,d.hospital_id,h.hospital_name,d.create_time,d.update_time
+        from department d
+        left join hospital h on h.id = d.hospital_id
+        <where>
+            d.is_delete = 0
+            <if test="hospitalId != null and hospitalId != ''">
+                and d.hospital_id = #{hospitalId}
+            </if>
+            <if test="departmentId != null and departmentId != ''">
+                and d.id = #{departmentId}
+            </if>
+            <if test="departmentName != null and departmentName != ''">
+                and d.department_name = #{departmentName}
+            </if>
+        </where>
+    </select>
+</mapper>

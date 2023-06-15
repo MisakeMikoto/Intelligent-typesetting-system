@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hyc.nsms.mapper.LeaveMapper">
+    <resultMap id="leavePageVo" type="com.hyc.nsms.model.vo.pageVo.LeavePageVo">
+        <result column="id" property="id"/>
+        <result column="hospital_id" property="hospitalId"/>
+        <result column="hospital_name" property="hospitalName"/>
+        <result column="department_id" property="departmentId"/>
+        <result column="department_name" property="departmentName"/>
+        <result column="username" property="username"/>
+        <result column="name" property="name"/>
+        <result column="start_date" property="startDate"/>
+        <result column="end_date" property="endDate"/>
+        <result column="leave_days" property="leaveDays"/>
+        <result column="reason" property="reason"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <resultMap id="userWorkloadVo" type="com.hyc.nsms.model.vo.UserWorkloadVo">
+        <result column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="work_days" property="workDays"/>
+        <result column="read_work_days" property="realWorkDays"/>
+        <result column="evening_shifts" property="eveningShifts"/>
+        <result column="read_evening_shifts" property="realEveningShifts"/>
+        <result column="left_days" property="leftDays"/>
+        <collection property="schedule" ofType="com.hyc.nsms.model.entity.Schedule"
+                    select="com.hyc.nsms.mapper.ScheduleMapper.getScheduleList" column="userId"></collection>
+    </resultMap>
+
+    <!-- 通过传递当前页、每页记录数、用户权限等级、医院id、科室id、查询条件分页查询请假信息 -->
+    <select id="findPageLeave" resultMap="leavePageVo">
+        select
+        l.id,u.hospital_id,h.hospital_name,u.department_id,d.department_name,l.create_time,l.update_time,
+        l.user_id,u.name,u.username,l.replace_user_id,ul.name as replace_username,
+        l.start_date,l.end_date,l.leave_days,l.reason,l.status
+        from ask_for_leave l
+        left join user u on u.id = l.user_id
+        left join user ul on ul.id = l.replace_user_id
+        left join role r on r.id = u.role_id
+        left join hospital h on h.id = u.hospital_id
+        left join department d on d.id = u.department_id
+        <where>
+            l.is_delete = 0
+            and r.level > #{level}
+            <if test="hospitalId != null and hospitalId != ''">
+                and u.hospital_id = #{hospitalId}
+            </if>
+            <if test="departmentId != null and departmentId != ''">
+                and u.department_id = #{departmentId}
+            </if>
+            <if test="name != null and name != ''">
+                and u.name like "%" #{name} "%"
+            </if>
+        </where>
+    </select>
+
+    <!-- 获得合适顶班的人员 -->
+    <select id="getMatchStaff" resultMap="userWorkloadVo">
+        select u.id,u.name,w.real_work_days,w.work_days,w.real_evening_shifts,w.evening_shifts,w.left_days
+        from user u
+        left join workload w on u.id = w.user_id
+        <where>
+            u.is_delete = 0
+            <if test="departmentId != null and departmentId != ''">
+                and u.department_id = #{departmentId}
+            </if>
+            <if test="roleId != null and roleId != ''">
+                and u.role_id = #{roleId}
+            </if>
+            and u.id not in
+            <foreach collection="workUserIdList" index="index" item="user_id" open="(" close=")" separator=",">
+                #{user_id}
+            </foreach>
+        </where>
+    </select>
+</mapper>
